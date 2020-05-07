@@ -1,24 +1,37 @@
 package com.company;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 public class Perceptron {
+
 
     public static void main(String[] args) {
 
-        double[] x1 = new double[] {1.0,0.0,0.0};
-        double[] x2 = new double[] {1.0,0.0,1.0};
-        double[] x3 = new double[] {1.0,1.0,0.0};
-        double[] x4 = new double[] {1.0,1.0,1.0};
+        List wektoryTrenujace = new ArrayList<double[]>();
+        wektoryTrenujace.add(new double[] {1.0,0.0,0.0});
+        wektoryTrenujace.add(new double[] {1.0,0.0,1.0});
+        wektoryTrenujace.add(new double[] {1.0,1.0,0.0});
+        wektoryTrenujace.add(new double[] {1.0,1.0,1.0});
 
         double[] d = new double[] {0.0,0.0,1.0,0.0};
 
         double[] w1 = new double[] {1.0,1.0,1.0};
         double p;
 
+        System.out.println("Wagi początkowe: " + Print(w1) + "\n");
+
         //punkt a) ωk+1 = ωk + ρ(dk - yk)xk
         //(i) ρ = 1 oraz ω1 = (1, 1, 1)
 
         p = 1;
-        perceptronA(x1,x2,x3,x4,w1,d,p);
+
+        System.out.println("Algorytm Preceptronu: \n a) (i)");
+
+        perceptronA(wektoryTrenujace,w1,d,p);
+
+        System.out.println("--------------------------------\n");
 
         //(ii) ρ = 0.1 oraz ω1 = (-0.12, 0.4, 0.65)
 
@@ -26,7 +39,12 @@ public class Perceptron {
         w1[0] = -0.12;
         w1[1] = 0.4;
         w1[2] = 0.65;
-        perceptronA(x1,x2,x3,x4,w1,d,p);
+
+        System.out.println("Algorytm Preceptronu: \n a) (ii)");
+
+        perceptronA(wektoryTrenujace,w1,d,p);
+
+        System.out.println("--------------------------------\n");
 
         //punkt b ωk+1 = ωk + c( suma źle rozpoznanych
         //wektorów przez wagę ωk)
@@ -35,52 +53,63 @@ public class Perceptron {
         w1[1] = 1;
         w1[2] = 1;
         double c = 1.0;
-        perceptronB(x1,x2,x3,x4,w1,d,c);
+
+        System.out.println("Algorytm Preceptronu: \n b)");
+
+        perceptronB(wektoryTrenujace,w1,d,c);
 
     }
 
-    public static void perceptronB(double[] x1, double[] x2, double[] x3, double[] x4,
-                                   double[] w1, double[] d, double c){
-
-        //sprawdzamy dla w1
-
-
-        double[] x1t = new double[3]; x1t = x1;
-        double[] x2t = new double[3]; x2t = x2;
-        double[] x3t = new double[3]; x3t = x3;
-        double[] x4t = new double[3]; x4t = x4;
-
-
-
-
-        double[] w2 = xRecon(x1,x2,x3,x4,w1,d,c);
-        double[] w3 = xRecon(x1,x2,x3,x4,w2,d,c);
-        double[] w4 = xRecon(x1,x2,x3,x4,w3,d,c);
-
-
-    }
-
-    public static double[] xRecon (double[] x1, double[] x2, double[] x3, double[] x4,
+    public static void perceptronB(List<double[]> wektoryTrenujace,
                                    double[] w, double[] d, double c){
         //sprawdzic ktore wektory sa zle rozpoznane przez wage i z jakim znakiem je wstawic
         //mam liste 4 wartosci, 0 oznacza wektor dobrze rozpoznany,
         // -1 zle rozpoznany z minusem, 1 zle rozpoanny z plusem i mnoze je prezz wektory
+
+
+
+        /*
+
+        double[] w2 = xRecon(wektoryTrenujace,w1,d,c);
+        double[] w3 = xRecon(wektoryTrenujace,w2,d,c);
+        double[] w4 = xRecon(wektoryTrenujace,w3,d,c);
+        */
+
         double[] result = new double[4];
-        result[0] = vectorSign(sigmFunc(matrixMult(x1,w)),d[0]);
-        result[1] = vectorSign(sigmFunc(matrixMult(x2,w)),d[0]);
-        result[2] = vectorSign(sigmFunc(matrixMult(x3,w)),d[0]);
-        result[3] = vectorSign(sigmFunc(matrixMult(x4,w)),d[0]);
+        double[] sumOfWec = new double[4];
+        boolean repeat;
 
-        x1 = matrixMult(result[0],x1);
-        x2 = matrixMult(result[1],x2);
-        x3 = matrixMult(result[2],x3);
-        x4 = matrixMult(result[3],x4);
+        //y1
+        int iteracje = 0;
+        do {
+            Arrays.fill(sumOfWec, 0.0);
+            repeat = false;
+            iteracje++;
+            System.out.println("Iteracja: " + iteracje);
+            for (int i=0; i< wektoryTrenujace.size();i++){
+                result[i] = vectorSign(sigmFunc(matrixMult(wektoryTrenujace.get(i),w)),d[i]);
+                sumOfWec = matrixAdd(sumOfWec, matrixMult(result[i],wektoryTrenujace.get(i)));
+                if (result[i] != 0){
+                    System.out.println("Wektor trenujacy x" + (i+1) + " zostal zle rozpoznany przez wage " + Print(w));
+                    repeat = true;
+                }
 
-        result = matrixAdd(w,matrixMult(c,matrixAdd(matrixAdd(x1,x2),matrixAdd(x3,x4))));
+            }
+            w = matrixAdd(w,matrixMult(c,sumOfWec));
+            System.out.println("Nowa waga: " + Print(w) + "\n");
+            if (iteracje> 40)
+            {
+                System.out.println("Wagi nie stabilizują się po 40 iteracjach.");
+                return;
+            }
+        } while (repeat);
 
-        return result;
+        System.out.println("Wagi ustabilizowaly sie po " + iteracje + " iteracji/ach.\nWaga wynosi " +  Print(w));
+
+
 
     }
+
 
     public static double vectorSign (double y, double d){
         //funkcja zwraca znak wektora
@@ -91,23 +120,28 @@ public class Perceptron {
         } else return -1;
     }
 
-    public static void perceptronA(double[] x1, double[] x2, double[] x3, double[] x4,
-                                   double[] w1, double[] d, double p){
+    public static void perceptronA(List<double[]> wektoryTrenujace,double[] w, double[] d, double p){
 
         double[] y = new double[4];
 
-        //y1
-        y[0] = sigmFunc(matrixMult(w1, x1));
-        double[] w2 = matrixAdd(w1, matrixMult((p*(d[0]-y[0])),x1));
-        //y2
-        y[1] = sigmFunc(matrixMult(w2, x2));
-        double[] w3 = matrixAdd(w2, matrixMult((p*(d[1]-y[1])),x2));
-        //y3
-        y[2] = sigmFunc(matrixMult(w3, x3));
-        double[] w4 = matrixAdd(w3, matrixMult((p*(d[2]-y[2])),x3));
 
-        y[3] = sigmFunc(matrixMult(w4, x4));
-        double[] w5 = matrixAdd(w4, matrixMult((p*(d[3]-y[3])),x4));
+        //y1
+        int iteracje = 0;
+        do {
+            iteracje++;
+            for (int i=0; i< wektoryTrenujace.size();i++){
+                y[i] = sigmFunc(matrixMult(w, wektoryTrenujace.get(i)));
+                w = matrixAdd(w, matrixMult((p * (d[i] - y[i])), wektoryTrenujace.get(i)));
+                System.out.println("Wektor: x" + i + ": " + Print(wektoryTrenujace.get(i)) + ", waga: " + Print(w) + "\n");
+            }
+            if (iteracje> 40)
+            {
+                System.out.println("Wagi nie stabilizują się po 40 iteracjach.");
+                return;
+            }
+        } while (!Arrays.equals(d,y));
+
+        System.out.println("Wagi ustabilizowaly sie po " + iteracje + " iteracji/ach.\nWaga wynosi " +  Print(w));
 
     }
 
@@ -138,6 +172,19 @@ public class Perceptron {
             return 1;
         } else return 0;
     }
+
+    public static String Print(double[] list)
+    {
+        StringBuilder builder = new StringBuilder("[ ");
+        for (double item : list)
+        {
+            builder.append(String.format("%.2f",item) + ", ");
+        }
+        builder.deleteCharAt(builder.length() - 2);
+        builder.append("]");
+        return builder.toString();
+    }
+
 
 
 
